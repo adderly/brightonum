@@ -52,6 +52,8 @@ type Config struct {
 
 	// Enable private mode
 	Private bool `long:"private" required:"false" description:"Private Mode"`
+
+	DBType string ``
 }
 
 // RecoveryEmailPayload represents payload of password recovery email request

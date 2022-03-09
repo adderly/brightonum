@@ -7,7 +7,7 @@ type UserDao interface {
 
 	// Save Returns generated id (> 0) on success.
 	// Returns -1 on internal failure.
-	Save(*structs.User) int
+	Save(*structs.User) int64
 
 	// GetByUsername returns nil when user is not found
 	// Returns error if data access error occured

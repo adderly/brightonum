@@ -8,25 +8,24 @@ import (
 	"strings"
 	"syscall"
 
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"xorm.io/builder"
+	"xorm.io/xorm"
 )
 
 // MysqlUserDao provides UserDao implementation via MongoDB
 type MysqlUserDao struct {
-	Client       *mongo.Client
+	Db           *xorm.Engine
 	DatabaseName string
 	Ctx          context.Context
 }
 
 // NewMysqlUserDao creates instance of MysqlUserDao
-func NewMysqlUserDao(URL string, databaseName string) *MysqlUserDao {
+func NewMysqlUserDao(driverUrl string, databaseName string) *MysqlUserDao {
 	ctx, cancel := context.WithCancel(context.Background())
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(URL))
+	dbClient, err := xorm.NewEngine(driverUrl, databaseName)
 
 	if err != nil {
-		logger.Logf("ERROR Failed to dial mongo url: '%s'", URL)
+		logger.Logf("ERROR Failed to dial mongo url: '%s'", driverUrl)
 		panic(err)
 	}
 	logger.Logf("INFO Connected to MongoDB")
@@ -35,65 +34,42 @@ func NewMysqlUserDao(URL string, databaseName string) *MysqlUserDao {
 	go func() {
 		for range sigChan {
 			logger.Logf("INFO disconnecting from MongoDB")
-			client.Disconnect(ctx)
+			dbClient.Close()
 			logger.Logf("INFO disconnected from MongoDB")
 			cancel()
 		}
 	}()
 	signal.Notify(sigChan, syscall.SIGTERM)
 
-	return &MysqlUserDao{Client: client, DatabaseName: databaseName, Ctx: ctx}
+	return &MysqlUserDao{Db: dbClient, DatabaseName: databaseName, Ctx: ctx}
 }
 
 // Save saves user in MongoDB.
 // Implemented to retry insertion several times if another thread inserts document between
 // calculation of new id and insertion into collection.
-func (d *MysqlUserDao) Save(u *s.User) int {
+func (d *MysqlUserDao) Save(u *s.User) int64 {
 	u.Username = strings.ToLower(u.Username)
-	return d.doSave(u, 5)
-}
 
-func (d *MysqlUserDao) doSave(u *s.User, attemptsLeft int) int {
-	if attemptsLeft == 0 {
-		return -1
-	}
+	var user interface{}
+	user = u
 
-	collection := d.Client.Database(d.DatabaseName).Collection(collectionName)
+	affected, err := d.Db.Insert(&user)
 
-	newID := findNextID(d.Ctx, collection)
-
-	if newID < 0 {
-		return -1
-	}
-	u.ID = newID
-
-	_, err := collection.InsertOne(d.Ctx, &u)
 	if err != nil {
-		logger.Logf("ERROR %s", err)
-
-		// Retry if another document was inserted at this moment
-		if strings.Contains(err.Error(), "duplicate") {
-			return d.doSave(u, attemptsLeft-1)
-		}
-		return -1
+		return -1 //TODO: something happened
 	}
 
-	return newID
+	return affected
 }
 
 // GetByUsername extracts user by username
 func (d *MysqlUserDao) GetByUsername(username string) (*s.User, error) {
 	result := &s.User{}
 
-	collection := d.Client.Database(d.DatabaseName).Collection(collectionName)
-	err := collection.FindOne(d.Ctx, bson.M{
-		"username": strings.ToLower(username),
-	}).Decode(result)
+	q := builder.Expr("username = ?", strings.ToLower(username))
+	err := d.Db.Where(q).Find(result)
 
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			return nil, nil
-		}
 		logger.Logf("ERROR %s", err)
 		return nil, err
 	}
@@ -106,15 +82,10 @@ func (d *MysqlUserDao) GetByUsername(username string) (*s.User, error) {
 func (d *MysqlUserDao) GetByEmail(email string) (*s.User, error) {
 	result := &s.User{}
 
-	collection := d.Client.Database(d.DatabaseName).Collection(collectionName)
-	err := collection.FindOne(d.Ctx, bson.M{
-		"email": strings.ToLower(email),
-	}).Decode(result)
+	q := builder.Expr("email = ?", strings.ToLower(email))
+	err := d.Db.Where(q).Find(result)
 
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			return nil, nil
-		}
 		logger.Logf("ERROR %s", err)
 		return nil, err
 	}
@@ -126,15 +97,10 @@ func (d *MysqlUserDao) GetByEmail(email string) (*s.User, error) {
 func (d *MysqlUserDao) Get(id int) (*s.User, error) {
 	result := &s.User{}
 
-	collection := d.Client.Database(d.DatabaseName).Collection(collectionName)
+	q := builder.Expr("ID = ?", id)
+	err := d.Db.Where(q).Find(result)
 
-	err := collection.FindOne(d.Ctx, bson.M{
-		"_id": id,
-	}).Decode(result)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			return nil, nil
-		}
 		logger.Logf("ERROR %s", err)
 		return nil, err
 	}
@@ -146,21 +112,11 @@ func (d *MysqlUserDao) Get(id int) (*s.User, error) {
 func (d *MysqlUserDao) GetAll() (*[]s.User, error) {
 	result := []s.User{}
 
-	collection := d.Client.Database(d.DatabaseName).Collection(collectionName)
-	cur, err := collection.Find(d.Ctx, bson.M{})
+	err := d.Db.Find(result)
+
 	if err != nil {
 		logger.Logf("ERROR %s", err)
 		return nil, err
-	}
-	defer cur.Close(d.Ctx)
-	for cur.Next(d.Ctx) {
-		u := s.User{}
-		err = cur.Decode(&u)
-		if err != nil {
-			logger.Logf("ERROR %s", err)
-			return nil, err
-		}
-		result = append(result, u)
 	}
 
 	return &result, nil
@@ -168,78 +124,75 @@ func (d *MysqlUserDao) GetAll() (*[]s.User, error) {
 
 // Update updates user if exists
 func (d *MysqlUserDao) Update(u *s.User) error {
-	collection := d.Client.Database(d.DatabaseName).Collection(collectionName)
 
-	updateBody := bson.M{}
+	updatedUser := &s.User{}
+
 	if u.FirstName != "" {
-		updateBody["firstName"] = u.FirstName
+		updatedUser.FirstName = u.FirstName
 	}
 	if u.LastName != "" {
-		updateBody["lastName"] = u.LastName
+		updatedUser.LastName = u.LastName
 	}
 	if u.Email != "" {
-		updateBody["email"] = u.Email
+		updatedUser.Email = u.Email
 	}
 	if u.Password != "" {
-		updateBody["password"] = u.Password
+		updatedUser.Password = u.Password
 	}
 
-	_, err := collection.UpdateOne(d.Ctx, bson.M{"_id": u.ID}, bson.M{"$set": updateBody})
+	_, err := d.Db.ID(u.ID).Update(updatedUser)
+
 	return err
 }
 
 // SetRecoveryCode sets password recovery code for user id
 func (d *MysqlUserDao) SetRecoveryCode(id int, code string) error {
-	return d.setFieldAndWipeOtherForId(id, "recoveryCode", code, "resettingCode")
+
+	user := &s.User{}
+	user.RecoveryCode = code
+	user.ResettingCode = " "
+	_, err := d.Db.ID(id).Update(user)
+
+	return err
 }
 
 // GetRecoveryCode extracts recovery code for user id
 func (d *MysqlUserDao) GetRecoveryCode(id int) (string, error) {
-	return d.getStringFieldForId(id, "recoveryCode")
+	var user s.User
+	q := builder.Expr("ID = ", id)
+	err := d.Db.Where(q).Find(&user)
+	return user.RecoveryCode, err
 }
 
 // SetResettingCode sets resetting code and removes recovery one
 func (d *MysqlUserDao) SetResettingCode(id int, code string) error {
-	return d.setFieldAndWipeOtherForId(id, "resettingCode", code, "recoveryCode")
+	user := &s.User{}
+	user.ResettingCode = code
+	user.RecoveryCode = " "
+	_, err := d.Db.ID(id).Update(user)
+	return err
 }
 
 // GetResettingCode extracts resetting code for user id
 func (d *MysqlUserDao) GetResettingCode(id int) (string, error) {
-	return d.getStringFieldForId(id, "resettingCode")
+	var user s.User
+	q := builder.Expr("ID = ", id)
+	err := d.Db.Where(q).Find(&user)
+	return user.ResettingCode, err
 }
 
 // ResetPassword updates password and removes resetting code
 func (d *MysqlUserDao) ResetPassword(id int, passwordHash string) error {
-	return d.setFieldAndWipeOtherForId(id, "password", passwordHash, "resettingCode")
+	user := &s.User{}
+	user.Password = passwordHash
+	user.ResettingCode = " "
+	_, err := d.Db.ID(id).Update(user)
+	return err
 }
 
 // DeleteById deletes user by id
 func (d *MysqlUserDao) DeleteById(id int) error {
-	collection := d.Client.Database(d.DatabaseName).Collection(collectionName)
-	_, err := collection.DeleteOne(d.Ctx, bson.M{"_id": id})
-	return err
-}
-
-func (d *MysqlUserDao) getStringFieldForId(id int, field string) (string, error) {
-	collection := d.Client.Database(d.DatabaseName).Collection(collectionName)
-
-	var result bson.M
-
-	opt := options.FindOne().SetProjection(bson.M{"_id": 0, field: 1})
-	err := collection.FindOne(d.Ctx, bson.M{"_id": id}, opt).Decode(&result)
-
-	if err != nil {
-		return "", err
-	}
-
-	return result[field].(string), nil
-}
-
-func (d *MysqlUserDao) setFieldAndWipeOtherForId(id int, fieldToSet string, value string, fieldToWipe string) error {
-	collection := d.Client.Database(d.DatabaseName).Collection(collectionName)
-
-	updateBody := bson.M{fieldToSet: value, fieldToWipe: ""}
-
-	_, err := collection.UpdateOne(d.Ctx, bson.M{"_id": id}, bson.M{"$set": updateBody})
+	q := builder.Expr("ID = ?", id)
+	_, err := d.Db.Where(q).Delete()
 	return err
 }

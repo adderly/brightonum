@@ -30,7 +30,7 @@ type MongoUserDao struct {
 // MaxIDResponse for response on pipe. Used for extracting current max id
 type MaxIDResponse struct {
 	_ID   string `bson:"_id"`
-	MaxID int    `bson:"MaxID"`
+	MaxID int64  `bson:"MaxID"`
 }
 
 // NewMongoUserDao creates instance of MongoUserDao
@@ -61,12 +61,12 @@ func NewMongoUserDao(URL string, databaseName string) *MongoUserDao {
 // Save saves user in MongoDB.
 // Implemented to retry insertion several times if another thread inserts document between
 // calculation of new id and insertion into collection.
-func (d *MongoUserDao) Save(u *s.User) int {
+func (d *MongoUserDao) Save(u *s.User) int64 {
 	u.Username = strings.ToLower(u.Username)
 	return d.doSave(u, 5)
 }
 
-func (d *MongoUserDao) doSave(u *s.User, attemptsLeft int) int {
+func (d *MongoUserDao) doSave(u *s.User, attemptsLeft int) int64 {
 	if attemptsLeft == 0 {
 		return -1
 	}
@@ -94,7 +94,7 @@ func (d *MongoUserDao) doSave(u *s.User, attemptsLeft int) int {
 	return newID
 }
 
-func findNextID(ctx context.Context, collection *mongo.Collection) int {
+func findNextID(ctx context.Context, collection *mongo.Collection) int64 {
 	resp := &MaxIDResponse{}
 
 	cur, err := collection.Aggregate(ctx, []bson.M{
