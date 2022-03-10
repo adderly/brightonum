@@ -19,7 +19,7 @@ type UserDao interface {
 
 	// Get returns nil when user is not found
 	// Returns error if data access error occured
-	Get(int) (*structs.User, error)
+	Get(int64) (*structs.User, error)
 
 	// GetAll returns all users or empty list
 	GetAll() (*[]structs.User, error)
@@ -28,20 +28,20 @@ type UserDao interface {
 	Update(*structs.User) error
 
 	// SetRecoveryCode sets password recovery code for user id
-	SetRecoveryCode(int, string) error
+	SetRecoveryCode(int64, string) error
 
 	// GetRecoveryCode extracts recovery code for user id
-	GetRecoveryCode(int) (string, error)
+	GetRecoveryCode(int64) (string, error)
 
 	// SetResettingCode sets resetting code and removes recovery one
-	SetResettingCode(int, string) error
+	SetResettingCode(int64, string) error
 
 	// GetResettingCode extracts resetting code for user id
-	GetResettingCode(int) (string, error)
+	GetResettingCode(int64) (string, error)
 
 	// ResetPassword updates password and removes resetting code
-	ResetPassword(int, string) error
+	ResetPassword(int64, string) error
 
 	// DeleteById deletes user by id
-	DeleteById(int) error
+	DeleteById(int64) error
 }

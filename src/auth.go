@@ -48,7 +48,7 @@ type Config struct {
 	Debug bool `long:"debug" required:"false" description:"Enable debug logging"`
 
 	// Admin ID
-	AdminID int `long:"adminID" required:"true" description:"Admin ID"`
+	AdminID int64 `long:"adminID" required:"true" description:"Admin ID"`
 
 	// Enable private mode
 	Private bool `long:"private" required:"false" description:"Private Mode"`

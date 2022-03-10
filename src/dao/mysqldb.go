@@ -28,14 +28,18 @@ func NewMysqlUserDao(driverUrl string, databaseName string) *MysqlUserDao {
 		logger.Logf("ERROR Failed to dial mongo url: '%s'", driverUrl)
 		panic(err)
 	}
-	logger.Logf("INFO Connected to MongoDB")
+
+	if err = dbClient.Sync2(new(s.User)); err != nil {
+		logger.Logf("orm failed to initialized User table: %v", err)
+	}
+	logger.Logf("INFO Connected to SQLDb")
 
 	sigChan := make(chan os.Signal)
 	go func() {
 		for range sigChan {
-			logger.Logf("INFO disconnecting from MongoDB")
+			logger.Logf("INFO disconnecting from SQLDb")
 			dbClient.Close()
-			logger.Logf("INFO disconnected from MongoDB")
+			logger.Logf("INFO disconnected from SQLDb")
 			cancel()
 		}
 	}()
@@ -44,7 +48,7 @@ func NewMysqlUserDao(driverUrl string, databaseName string) *MysqlUserDao {
 	return &MysqlUserDao{Db: dbClient, DatabaseName: databaseName, Ctx: ctx}
 }
 
-// Save saves user in MongoDB.
+// Save saves user in SQLDb.
 // Implemented to retry insertion several times if another thread inserts document between
 // calculation of new id and insertion into collection.
 func (d *MysqlUserDao) Save(u *s.User) int64 {
@@ -94,7 +98,7 @@ func (d *MysqlUserDao) GetByEmail(email string) (*s.User, error) {
 }
 
 // Get returns user by id
-func (d *MysqlUserDao) Get(id int) (*s.User, error) {
+func (d *MysqlUserDao) Get(id int64) (*s.User, error) {
 	result := &s.User{}
 
 	q := builder.Expr("ID = ?", id)
@@ -146,7 +150,7 @@ func (d *MysqlUserDao) Update(u *s.User) error {
 }
 
 // SetRecoveryCode sets password recovery code for user id
-func (d *MysqlUserDao) SetRecoveryCode(id int, code string) error {
+func (d *MysqlUserDao) SetRecoveryCode(id int64, code string) error {
 
 	user := &s.User{}
 	user.RecoveryCode = code
@@ -157,7 +161,7 @@ func (d *MysqlUserDao) SetRecoveryCode(id int, code string) error {
 }
 
 // GetRecoveryCode extracts recovery code for user id
-func (d *MysqlUserDao) GetRecoveryCode(id int) (string, error) {
+func (d *MysqlUserDao) GetRecoveryCode(id int64) (string, error) {
 	var user s.User
 	q := builder.Expr("ID = ", id)
 	err := d.Db.Where(q).Find(&user)
@@ -165,7 +169,7 @@ func (d *MysqlUserDao) GetRecoveryCode(id int) (string, error) {
 }
 
 // SetResettingCode sets resetting code and removes recovery one
-func (d *MysqlUserDao) SetResettingCode(id int, code string) error {
+func (d *MysqlUserDao) SetResettingCode(id int64, code string) error {
 	user := &s.User{}
 	user.ResettingCode = code
 	user.RecoveryCode = " "
@@ -174,7 +178,7 @@ func (d *MysqlUserDao) SetResettingCode(id int, code string) error {
 }
 
 // GetResettingCode extracts resetting code for user id
-func (d *MysqlUserDao) GetResettingCode(id int) (string, error) {
+func (d *MysqlUserDao) GetResettingCode(id int64) (string, error) {
 	var user s.User
 	q := builder.Expr("ID = ", id)
 	err := d.Db.Where(q).Find(&user)
@@ -182,7 +186,7 @@ func (d *MysqlUserDao) GetResettingCode(id int) (string, error) {
 }
 
 // ResetPassword updates password and removes resetting code
-func (d *MysqlUserDao) ResetPassword(id int, passwordHash string) error {
+func (d *MysqlUserDao) ResetPassword(id int64, passwordHash string) error {
 	user := &s.User{}
 	user.Password = passwordHash
 	user.ResettingCode = " "
@@ -191,7 +195,7 @@ func (d *MysqlUserDao) ResetPassword(id int, passwordHash string) error {
 }
 
 // DeleteById deletes user by id
-func (d *MysqlUserDao) DeleteById(id int) error {
+func (d *MysqlUserDao) DeleteById(id int64) error {
 	q := builder.Expr("ID = ?", id)
 	_, err := d.Db.Where(q).Delete()
 	return err

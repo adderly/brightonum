@@ -121,7 +121,7 @@ func (s *AuthService) UpdateUser(u *st.User, token string) error {
 }
 
 // DeleteUser delets user
-func (s *AuthService) DeleteUser(id int, token string) error {
+func (s *AuthService) DeleteUser(id int64, token string) error {
 	tokenUser, valid := s.validateToken(token)
 	if !valid || tokenUser.ID != id && tokenUser.ID != s.Config.AdminID {
 		return st.AuthError{Msg: "Invalid token", Status: 401}
@@ -144,7 +144,7 @@ func validateUpdatePayload(u *st.User) bool {
 	return u.ID > 0 && u.Username == "" && u.Password == ""
 }
 
-func (s *AuthService) userExists(id int) (bool, error) {
+func (s *AuthService) userExists(id int64) (bool, error) {
 	u, err := s.UserDao.Get(id)
 	if err != nil {
 		return false, err
@@ -302,7 +302,7 @@ func (s *AuthService) GetUserByToken(t string) (*st.User, error) {
 }
 
 // GetUserById returns user info for specific id
-func (s *AuthService) GetUserById(id int, token string) (*st.UserInfo, error) {
+func (s *AuthService) GetUserById(id int64, token string) (*st.UserInfo, error) {
 	_, ok := s.validateToken(token)
 	if !ok {
 		return nil, st.AuthError{Msg: "Invalid token", Status: 401}

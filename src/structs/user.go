@@ -19,7 +19,7 @@ type User struct {
 
 // UserInfo structure
 type UserInfo struct {
-	ID        int    `json:"id"`
+	ID        int64  `json:"id"`
 	Username  string `json:"username"`
 	FirstName string `json:"firstName"`
 	LastName  string `json:"lastName"`

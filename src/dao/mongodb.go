@@ -161,7 +161,7 @@ func (d *MongoUserDao) GetByEmail(email string) (*s.User, error) {
 }
 
 // Get returns user by id
-func (d *MongoUserDao) Get(id int) (*s.User, error) {
+func (d *MongoUserDao) Get(id int64) (*s.User, error) {
 	result := &s.User{}
 
 	collection := d.Client.Database(d.DatabaseName).Collection(collectionName)
@@ -227,38 +227,38 @@ func (d *MongoUserDao) Update(u *s.User) error {
 }
 
 // SetRecoveryCode sets password recovery code for user id
-func (d *MongoUserDao) SetRecoveryCode(id int, code string) error {
+func (d *MongoUserDao) SetRecoveryCode(id int64, code string) error {
 	return d.setFieldAndWipeOtherForId(id, "recoveryCode", code, "resettingCode")
 }
 
 // GetRecoveryCode extracts recovery code for user id
-func (d *MongoUserDao) GetRecoveryCode(id int) (string, error) {
+func (d *MongoUserDao) GetRecoveryCode(id int64) (string, error) {
 	return d.getStringFieldForId(id, "recoveryCode")
 }
 
 // SetResettingCode sets resetting code and removes recovery one
-func (d *MongoUserDao) SetResettingCode(id int, code string) error {
+func (d *MongoUserDao) SetResettingCode(id int64, code string) error {
 	return d.setFieldAndWipeOtherForId(id, "resettingCode", code, "recoveryCode")
 }
 
 // GetResettingCode extracts resetting code for user id
-func (d *MongoUserDao) GetResettingCode(id int) (string, error) {
+func (d *MongoUserDao) GetResettingCode(id int64) (string, error) {
 	return d.getStringFieldForId(id, "resettingCode")
 }
 
 // ResetPassword updates password and removes resetting code
-func (d *MongoUserDao) ResetPassword(id int, passwordHash string) error {
+func (d *MongoUserDao) ResetPassword(id int64, passwordHash string) error {
 	return d.setFieldAndWipeOtherForId(id, "password", passwordHash, "resettingCode")
 }
 
 // DeleteById deletes user by id
-func (d *MongoUserDao) DeleteById(id int) error {
+func (d *MongoUserDao) DeleteById(id int64) error {
 	collection := d.Client.Database(d.DatabaseName).Collection(collectionName)
 	_, err := collection.DeleteOne(d.Ctx, bson.M{"_id": id})
 	return err
 }
 
-func (d *MongoUserDao) getStringFieldForId(id int, field string) (string, error) {
+func (d *MongoUserDao) getStringFieldForId(id int64, field string) (string, error) {
 	collection := d.Client.Database(d.DatabaseName).Collection(collectionName)
 
 	var result bson.M
@@ -273,7 +273,7 @@ func (d *MongoUserDao) getStringFieldForId(id int, field string) (string, error)
 	return result[field].(string), nil
 }
 
-func (d *MongoUserDao) setFieldAndWipeOtherForId(id int, fieldToSet string, value string, fieldToWipe string) error {
+func (d *MongoUserDao) setFieldAndWipeOtherForId(id int64, fieldToSet string, value string, fieldToWipe string) error {
 	collection := d.Client.Database(d.DatabaseName).Collection(collectionName)
 
 	updateBody := bson.M{fieldToSet: value, fieldToWipe: ""}

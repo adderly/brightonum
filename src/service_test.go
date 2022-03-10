@@ -344,7 +344,7 @@ func exctractField(tokenStr string, fieldName string, defaultValue interface{}) 
 	return actualValue
 }
 
-func issueTestToken(userID int, username string, privKeyPath string) string {
+func issueTestToken(userID int64, username string, privKeyPath string) string {
 	keyData, err := ioutil.ReadFile(privKeyPath)
 	if err != nil {
 		return ""
