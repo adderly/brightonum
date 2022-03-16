@@ -8,6 +8,8 @@ import (
 	"strings"
 	"syscall"
 
+	_ "github.com/go-sql-driver/mysql"
+
 	"xorm.io/builder"
 	"xorm.io/xorm"
 )
@@ -22,7 +24,7 @@ type MysqlUserDao struct {
 // NewMysqlUserDao creates instance of MysqlUserDao
 func NewMysqlUserDao(driverUrl string, databaseName string) *MysqlUserDao {
 	ctx, cancel := context.WithCancel(context.Background())
-	dbClient, err := xorm.NewEngine(driverUrl, databaseName)
+	dbClient, err := xorm.NewEngine("mysql", driverUrl)
 
 	if err != nil {
 		logger.Logf("ERROR Failed to dial mongo url: '%s'", driverUrl)

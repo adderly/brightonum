@@ -7,7 +7,7 @@ type ErrorResp struct {
 }
 
 type IDResp struct {
-	ID int `json:"id"`
+	ID int64 `json:"id"`
 }
 
 type AccessAndRefreshTokenResp struct {

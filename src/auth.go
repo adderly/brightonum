@@ -33,7 +33,7 @@ type Config struct {
 	PubKeyPath string `long:"pubkey" required:"true" description:"Path to a public key"`
 
 	// MongoDB URL
-	MongoDBURL string `long:"mongoURL" required:"true" description:"URL for MongoDB"`
+	MongoDBURL string `long:"dbDriverUrl" required:"true" description:"URL for MongoDB"`
 
 	// Database name
 	DatabaseName string `long:"databaseName" required:"true" description:"Database name"`
@@ -166,7 +166,7 @@ func (a *Auth) updateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userIDStr := chi.URLParam(r, "userID")
-	userID, err := strconv.Atoi(userIDStr)
+	userID, err := userIdParse(userIDStr)
 	if err != nil {
 		logger.Logf("ERROR Cannot parse user ID: %d", userID)
 		writeError(w, s.AuthError{Msg: "Cannot parse user ID", Status: 400})
@@ -218,7 +218,7 @@ func (a *Auth) deleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userIDStr := chi.URLParam(r, "userID")
-	userID, err := strconv.Atoi(userIDStr)
+	userID, err := userIdParse(userIDStr)
 	if err != nil {
 		logger.Logf("ERROR Cannot parse user ID: %d", userID)
 		writeError(w, s.AuthError{Msg: "Cannot parse user ID", Status: 400})
@@ -337,7 +337,7 @@ func (a *Auth) getUserById(w http.ResponseWriter, r *http.Request) {
 	token := headerItems[1]
 
 	userIDStr := chi.URLParam(r, "userID")
-	userID, err := strconv.Atoi(userIDStr)
+	userID, err := userIdParse(userIDStr)
 	if err != nil {
 		logger.Logf("ERROR Cannot parse user ID: %d", userID)
 		writeError(w, s.AuthError{Msg: "Cannot parse user ID", Status: 400})
@@ -480,6 +480,11 @@ func loggerHandler(h http.Handler) http.Handler {
 	})
 }
 
+func userIdParse(str string) (int64, error) {
+	userID, err := strconv.Atoi(str)
+	return int64(userID), err
+}
+
 func main() {
 	conf := Config{}
 
@@ -493,7 +498,8 @@ func main() {
 		logger = lgr.New(lgr.Debug, loggerFormat)
 	}
 
-	dao := dao.NewMongoUserDao(conf.MongoDBURL, conf.DatabaseName)
+	// dao := dao.NewMongoUserDao(conf.MongoDBURL, conf.DatabaseName)
+	dao := dao.NewMysqlUserDao(conf.MongoDBURL, conf.DatabaseName)
 	mailer := EmailMailer{Email: conf.Email, Password: conf.EmailPassword}
 	service := AuthService{UserDao: dao, Mailer: &mailer, Config: conf}
 	auth := Auth{AuthService: &service}
