@@ -1,4 +1,4 @@
-module ruslanlesko/brightonum
+module github.com/adderly/brightonum
 
 go 1.15
 
