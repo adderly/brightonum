@@ -1,8 +1,8 @@
-![BrightonUM logo](https://github.com/ruslanlesko/brightonum/raw/master/logo/main.png)
+![BrightonUM logo](https://github.com/github.com/adderly/brightonum/raw/master/logo/main.png)
 # BrightonUM - simple authentication and user management system
 Created by [Ruslan Lesko](https://leskor.com)
 
-[![BrightonUM Test](https://github.com/ruslanlesko/brightonum/actions/workflows/brightonum-test.yml/badge.svg)](https://github.com/ruslanlesko/brightonum/actions/workflows/brightonum-test.yml)
+[![BrightonUM Test](https://github.com/github.com/adderly/brightonum/actions/workflows/brightonum-test.yml/badge.svg)](https://github.com/github.com/adderly/brightonum/actions/workflows/brightonum-test.yml)
 
 BrightonUM is a perfect choice if you are looking for self-hosted JWT-based simple authentication and user management solution. This system exposes REST API and user authentication can be verified by checking signature of the issued JWT tokens (resource services need public keys for it). Data is stored using MongoDB, which is the only dependency for BrightonUM.
 

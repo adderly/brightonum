@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	"ruslanlesko/brightonum/src/dao"
-	st "ruslanlesko/brightonum/src/structs"
+	"github.com/adderly/brightonum/src/dao"
+	st "github.com/adderly/brightonum/src/structs"
 )
 
 var mailer = MailerMock{}

@@ -4,9 +4,10 @@ import (
 	"context"
 	"os"
 	"os/signal"
-	s "ruslanlesko/brightonum/src/structs"
 	"strings"
 	"syscall"
+
+	s "github.com/adderly/brightonum/src/structs"
 
 	_ "github.com/go-sql-driver/mysql"
 

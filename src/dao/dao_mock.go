@@ -1,7 +1,7 @@
 package dao
 
 import (
-	"ruslanlesko/brightonum/src/structs"
+	"github.com/adderly/brightonum/src/structs"
 
 	"github.com/stretchr/testify/mock"
 )

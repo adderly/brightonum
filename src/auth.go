@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"ruslanlesko/brightonum/src/dao"
-	s "ruslanlesko/brightonum/src/structs"
+	"github.com/adderly/brightonum/src/dao"
+	s "github.com/adderly/brightonum/src/structs"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"

@@ -4,9 +4,10 @@ import (
 	"context"
 	"os"
 	"os/signal"
-	s "ruslanlesko/brightonum/src/structs"
 	"strings"
 	"syscall"
+
+	s "github.com/adderly/brightonum/src/structs"
 
 	"github.com/go-pkgz/lgr"
 

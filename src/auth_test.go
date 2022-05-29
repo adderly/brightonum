@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"testing"
 
-	"ruslanlesko/brightonum/src/dao"
-	s "ruslanlesko/brightonum/src/structs"
+	"github.com/adderly/brightonum/src/dao"
+	s "github.com/adderly/brightonum/src/structs"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/rand"
-	"ruslanlesko/brightonum/src/crypto"
-	"ruslanlesko/brightonum/src/dao"
-	st "ruslanlesko/brightonum/src/structs"
 	"strconv"
+
+	"github.com/adderly/brightonum/src/crypto"
+	"github.com/adderly/brightonum/src/dao"
+	st "github.com/adderly/brightonum/src/structs"
 
 	"time"
 

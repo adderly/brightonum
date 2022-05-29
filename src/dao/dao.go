@@ -1,6 +1,6 @@
 package dao
 
-import "ruslanlesko/brightonum/src/structs"
+import "github.com/adderly/brightonum/src/structs"
 
 // UserDao provides interface to persisting operations
 type UserDao interface {
