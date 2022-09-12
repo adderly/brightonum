@@ -114,7 +114,7 @@ From the project root run
 
 * `--privkey` - path to RSA private key in PEM format
 * `--pubkey` - path to RSA public key in PEM format
-* `--dbDriverUrl` - URL to mongo DB (mongodb://username:password@localhost/db)
+* `--databaseDriverUrl` - URL to mongo DB (mongodb://username:password@localhost/db)
 * `--databaseName` - Name of the database to use
 * `--adminID` - Admin User ID
 

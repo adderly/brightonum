@@ -24,38 +24,6 @@ type Auth struct {
 	AuthService *AuthService
 }
 
-// Config provides configuration variables
-type Config struct {
-	// Path to a private key
-	PrivKeyPath string `long:"privkey" required:"true" description:"Path to a private key"`
-
-	// Path to a public key
-	PubKeyPath string `long:"pubkey" required:"true" description:"Path to a public key"`
-
-	// MongoDB URL
-	MongoDBURL string `long:"dbDriverUrl" required:"true" description:"URL for MongoDB"`
-
-	// Database name
-	DatabaseName string `long:"databaseName" required:"true" description:"Database name"`
-
-	// Email for password recovery (Gmail)
-	Email string `long:"email" required:"true" description:"Email for password recovery (Gmail)"`
-
-	// Password from email for password recovery
-	EmailPassword string `long:"emailPassword" required:"true" description:"Password from email for password recovery"`
-
-	// Enable debug logging
-	Debug bool `long:"debug" required:"false" description:"Enable debug logging"`
-
-	// Admin ID
-	AdminID int64 `long:"adminID" required:"true" description:"Admin ID"`
-
-	// Enable private mode
-	Private bool `long:"private" required:"false" description:"Private Mode"`
-
-	DBType string ``
-}
-
 // RecoveryEmailPayload represents payload of password recovery email request
 type RecoveryEmailPayload struct {
 	Username string `json:"username"`
@@ -485,6 +453,15 @@ func userIdParse(str string) (int64, error) {
 	return int64(userID), err
 }
 
+func startAuthService(conf Config) {
+	dao := dao.NewMysqlUserDao(conf.databaseURL, conf.DatabaseName)
+	mailer := EmailMailer{Email: conf.Email, Password: conf.EmailPassword}
+	service := AuthService{UserDao: dao, Mailer: &mailer, Config: conf}
+	auth := Auth{AuthService: &service}
+	logger.Logf("INFO BrightonUM 1.7.4 is starting")
+	auth.start()
+}
+
 func main() {
 	conf := Config{}
 
@@ -498,11 +475,5 @@ func main() {
 		logger = lgr.New(lgr.Debug, loggerFormat)
 	}
 
-	// dao := dao.NewMongoUserDao(conf.MongoDBURL, conf.DatabaseName)
-	dao := dao.NewMysqlUserDao(conf.MongoDBURL, conf.DatabaseName)
-	mailer := EmailMailer{Email: conf.Email, Password: conf.EmailPassword}
-	service := AuthService{UserDao: dao, Mailer: &mailer, Config: conf}
-	auth := Auth{AuthService: &service}
-	logger.Logf("INFO BrightonUM 1.7.4 is starting")
-	auth.start()
+	startAuthService((conf))
 }
