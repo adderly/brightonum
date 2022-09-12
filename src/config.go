@@ -9,7 +9,7 @@ type Config struct {
 	PubKeyPath string `long:"pubkey" required:"true" description:"Path to a public key"`
 
 	// MongoDB URL
-	databaseURL string `long:"databaseDriverUrl" required:"true" description:"URL for MongoDB"`
+	DatabaseURL string `long:"databaseURL" required:"true" description:"URL for MongoDB"`
 
 	// Database name
 	DatabaseName string `long:"databaseName" required:"true" description:"Database name"`

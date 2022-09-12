@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 // AuthService provides all auth operations

@@ -453,8 +453,19 @@ func userIdParse(str string) (int64, error) {
 	return int64(userID), err
 }
 
+func selectDaoByConfig(conf Config) dao.UserDao {
+	switch conf.DriverName {
+	case "mongo":
+		return dao.NewMongoUserDao(conf.DatabaseURL, conf.DatabaseName)
+	default:
+		return dao.NewSqlUserDao(conf.DriverName, conf.DatabaseURL, conf.DatabaseName)
+	}
+}
+
 func startAuthService(conf Config) {
-	dao := dao.NewMysqlUserDao(conf.databaseURL, conf.DatabaseName)
+
+	var dao = selectDaoByConfig((conf))
+
 	mailer := EmailMailer{Email: conf.Email, Password: conf.EmailPassword}
 	service := AuthService{UserDao: dao, Mailer: &mailer, Config: conf}
 	auth := Auth{AuthService: &service}
